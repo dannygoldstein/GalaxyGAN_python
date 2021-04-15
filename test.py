@@ -1,6 +1,6 @@
 from config import Config as conf
 from data import *
-import scipy.misc
+from PIL import Image
 from model import CGAN
 from utils import imsave
 import tensorflow as tf
@@ -11,8 +11,8 @@ from IPython import embed
 
 def prepocess_test(img, cond):
 
-    img = scipy.misc.imresize(img, [conf.train_size, conf.train_size])
-    cond = scipy.misc.imresize(cond, [conf.train_size, conf.train_size])
+    img = np.array(Image.fromarray(img).resize([conf.train_size, conf.train_size]))
+    cond = np.array(Image.fromarray(cond).resize([conf.train_size, conf.train_size]))
     img = img.reshape(1, conf.img_size, conf.img_size, conf.img_channel)
     cond = cond.reshape(1, conf.img_size, conf.img_size, conf.img_channel)
     img = img/127.5 - 1.

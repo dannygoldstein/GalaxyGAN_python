@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import scipy.misc
+import imageio
 
 def batch_norm(x, scope):
     return tf.contrib.layers.batch_norm(x, decay=0.9, updates_collections=None, epsilon=1e-5, scale=True, scope=scope)
@@ -34,7 +34,7 @@ def linear(input, output_size, scope=None, stddev=0.02, bias_start=0.0):
         return tf.matmul(input, weight) + bias
 
 def imread(path):
-    return scipy.misc.imread(path)
+    return imageio.imread(path)
 
 def imsave(image, path):
-    return scipy.misc.imsave(path, image)
+    return imageio.imwrite(path, image)
