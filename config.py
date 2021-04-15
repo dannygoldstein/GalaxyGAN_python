@@ -4,9 +4,9 @@ class Config:
     model_path_test = "figures/checkpoint/model_20.ckpt" 
     output_path = "results"
 
-    img_size = 424
-    adjust_size = 424
-    train_size = 424
+    img_size = 423
+    adjust_size = 423
+    train_size = 423
     img_channel = 3
     conv_channel_base = 64
 
