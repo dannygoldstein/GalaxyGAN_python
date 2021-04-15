@@ -12,6 +12,7 @@ def prepocess_train(img, cond,):
     
     img =np.array(Image.fromarray(img).resize([conf.adjust_size, conf.adjust_size]))
     cond =np.array(Image.fromarray(cond).resize([conf.adjust_size, conf.adjust_size]))
+    
     h1 = int(np.ceil(np.random.uniform(1e-2, conf.adjust_size - conf.train_size)))
     w1 = int(np.ceil(np.random.uniform(1e-2, conf.adjust_size - conf.train_size)))
     img = img[h1:h1 + conf.train_size, w1:w1 + conf.train_size]
@@ -35,9 +36,8 @@ def prepocess_test(img, cond):
     cond = cond/127.5 - 1.
     return img,cond
 
-def train():
+def train(model):
     data = load_data()
-    model = CGAN()
 
     d_opt = tf.train.AdamOptimizer(learning_rate=conf.learning_rate).minimize(model.d_loss, var_list=model.d_vars)
     g_opt = tf.train.AdamOptimizer(learning_rate=conf.learning_rate).minimize(model.g_loss, var_list=model.g_vars)
