@@ -11,6 +11,8 @@ import sys
 import wandb
 from collections import defaultdict
 import cv2
+import skimage.measure
+
 
 def prepocess_train(img, cond,):
     
@@ -130,7 +132,8 @@ def train(model, wandb_api_key=None):
 
     for i, name in enumerate(names):
         table.add_data(name, *[wandb.Image(data) for data in images_for_table[i]])
-        imageio.mimsave(name, images_for_table[i], format='GIF', duration=len(images_for_table[i]) / 3.)
+        # make images smaller to save disk space
+        imageio.mimsave(name, images_for_table[i], format='GIF')
                         
     wandb.log({'videos': [wandb.Video(name) for name in names]})
     test_evolution.add(table, 'training_evolution')
