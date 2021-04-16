@@ -89,10 +89,12 @@ def train(model, wandb_api_key=None):
         counter = 0
         for epoch in range(conf.max_epoch):
             train_data = data["train"]()
-            if conf.n_train is not None:
-                train_data = train_data[:conf.n_train]
             
-            for img, cond, name in train_data:
+            for i, (img, cond, name) in enumerate(train_data):
+
+                if not i < conf.n_train:
+                    break
+                
                 img, cond = prepocess_train(img, cond)
                 _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
                 #_, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
