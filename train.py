@@ -71,7 +71,7 @@ def train(model, wandb_api_key=None):
 
     names = []
     for i, (img, cond, name) in zip(range(conf.n_test_save or 100), test_data):
-        vidname = f'{name}.mp4'
+        vidname = f'{name}.gif'
         names.append(vidname)
 
     wandb.init(project='GalaxyGAN')
