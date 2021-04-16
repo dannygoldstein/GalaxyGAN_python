@@ -6,6 +6,7 @@ from utils import imsave
 import tensorflow as tf
 import numpy as np
 import time
+import imageio
 import sys
 import wandb
 from collections import defaultdict
@@ -62,7 +63,7 @@ def train(model, wandb_api_key=None):
     config.gpu_options.allow_growth = True
     wandb.config = {key: value for key, value in conf.__dict__.items() if not key.startswith('_')}
 
-    frameSize = (conf.img_size * 3, conf.img_size)
+    #frameSize = (conf.img_size * 3, conf.img_size)
 
     writers = []
 
@@ -72,8 +73,6 @@ def train(model, wandb_api_key=None):
     for i, (img, cond, name) in zip(range(conf.n_test_save or 100), test_data):
         vidname = f'{name}.mp4'
         names.append(vidname)
-        out = cv2.VideoWriter(vidname, cv2.VideoWriter_fourcc(*'mp4v'), 3, frameSize)
-        writers.append(out)
 
     wandb.init(project='GalaxyGAN')
     test_evolution = wandb.Artifact(f'test_evolution_{wandb.run.id}', type='predictions')
@@ -122,19 +121,18 @@ def train(model, wandb_api_key=None):
                     if idx < (conf.n_test_save or 100):
                         wandb_image = wandb.Image(image, caption=f'{name}_epoch{epoch}')
                         images.append(wandb_image)
-                        writer = writers[idx]
-                        writer.write(image)
                         images_for_table[idx].append(image)
                     else:
                         break
                         
                 wandb.log({f'predictions_epoch{epoch}': images})
 
-    for writer in writers:
-        writer.release()
-    wandb.log({'videos': [wandb.Video(name) for name in names]})
+
     for i, name in enumerate(names):
         table.add_data(name, *[wandb.Image(data) for data in images_for_table[i]])
+        imageio.mimsave(name, images_for_table[i], format='GIF', duration=len(images_for_table[i]) / 3.)
+                        
+    wandb.log({'videos': [wandb.Video(name) for name in names]})
     test_evolution.add(table, 'training_evolution')
     wandb.run.log_artifact(test_evolution)
                     
