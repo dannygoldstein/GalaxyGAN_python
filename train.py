@@ -66,6 +66,7 @@ def train(model, wandb_api_key=None):
             saver.restore(sess, conf.model_path_train)
         for epoch in range(conf.max_epoch):
             train_data = data["train"]()
+            counter = 0
             for img, cond, name in train_data:
                 img, cond = prepocess_train(img, cond)
                 _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
