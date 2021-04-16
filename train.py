@@ -64,10 +64,11 @@ def train(model, wandb_api_key=None):
             sess.run(tf.global_variables_initializer())
         else:
             saver.restore(sess, conf.model_path_train)
+            
+        counter = 0
         for epoch in range(conf.max_epoch):
             train_data = data["train"]()
-            counter = 0
-            for img, cond, name in train_data:
+            for img, cond, name in train_data[:10]:
                 img, cond = prepocess_train(img, cond)
                 _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
                 _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
@@ -76,14 +77,14 @@ def train(model, wandb_api_key=None):
                 if counter % 10 ==0:
                     print("Epoch [%d], Iteration [%d]: time: %4.4f, d_loss: %.8f, g_loss: %.8f" \
                       % (epoch, counter % 4001, time.time() - start_time, m, M))
-                    wandb.log({'generator_loss': M, 'discriminator_loss': m}, step=counter)
+                    wandb.tensorflow.log(tf.summary.merge_all())
                     
             if (epoch + 1) % conf.save_per_epoch == 0:
                 save_path = saver.save(sess, conf.data_path + "/checkpoint/" + "model_%d.ckpt" % (epoch+1))
                 print("Model saved in file: %s" % save_path)
                 test_data = data["test"]()
                 images = []
-                for idx, (img, cond, name) in enumerate(test_data):
+                for idx, (img, cond, name) in enumerate(test_data)[:10]:
                     pimg, pcond = prepocess_test(img, cond)
                     gen_img = sess.run(model.gen_img, feed_dict={model.image:pimg, model.cond:pcond})
                     gen_img = gen_img.reshape(gen_img.shape[1:])
@@ -95,6 +96,7 @@ def train(model, wandb_api_key=None):
                         wandb_image = wandb.Image(image, caption=f'{name}_epoch{epoch}')
                         images.append(wandb_image)
                 wandb.log({'predictions': images}, step=counter)
+                print('logged images')
                     
                     
 
