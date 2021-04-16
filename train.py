@@ -8,6 +8,8 @@ import numpy as np
 import time
 import sys
 import wandb
+from collections import defaultdict
+import cv2
 
 def prepocess_train(img, cond,):
     
@@ -42,9 +44,8 @@ def prepocess_test(img, cond):
 def train(model, wandb_api_key=None):
     
     data = load_data()
-
+    images_for_table = defaultdict(list)
     wandb.login(key=wandb_api_key)
-    wandb.init(project='GalaxyGAN')
 
     d_opt = tf.train.AdamOptimizer(learning_rate=conf.learning_rate).minimize(model.d_loss, var_list=model.d_vars)
     g_opt = tf.train.AdamOptimizer(learning_rate=conf.learning_rate).minimize(model.g_loss, var_list=model.g_vars)
@@ -59,6 +60,26 @@ def train(model, wandb_api_key=None):
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
+    wandb.config = conf.__dict__()
+
+    frameSize = (conf.img_size, conf.img_size * 2)
+
+    writers = []
+
+    test_data = data["test"]()
+
+    names = []
+    for i, (name, img, cond) in zip(range(conf.n_test_save or 100), test_data):
+        vidname = f'{name}.mp4'
+        names.append(vidname)
+        out = cv2.VideoWriter(vidname, cv2.VideoWriter_fourcc(*'MP4V'), 3, frameSize)
+        writers.append(out)
+
+    wandb.init(project='GalaxyGAN', config=tf.FLAGS)
+    test_evolution = wandb.Artifact(f'test_evolution_{wandb.run.id}', type='predictions')
+    columns = ['id'] + ['epoch{i}' for i in range(conf.max_epoch)]    
+    table = wandb.Table(columns=columns)
+
     with tf.Session(config=config) as sess:
         if conf.model_path_train == "":
             sess.run(tf.global_variables_initializer())
@@ -68,17 +89,20 @@ def train(model, wandb_api_key=None):
         counter = 0
         for epoch in range(conf.max_epoch):
             train_data = data["train"]()
+            if conf.n_train is not None:
+                train_data = train_data[:conf.n_train]
+            
             for img, cond, name in train_data:
                 img, cond = prepocess_train(img, cond)
                 _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
-                _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
+                #_, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
                 _, M = sess.run([g_opt, model.g_loss], feed_dict={model.image:img, model.cond:cond})
                 counter += 1
                 if counter % 10 ==0:
                     print("Epoch [%d], Iteration [%d]: time: %4.4f, d_loss: %.8f, g_loss: %.8f" \
                       % (epoch, counter % 4001, time.time() - start_time, m, M))
-                    wandb.tensorflow.log(tf.summary.merge_all())
-                    break
+                    wandb.log({'generator_loss': M, 'discriminator_loss': m})
+                    
                     
             if (epoch + 1) % conf.save_per_epoch == 0:
                 save_path = saver.save(sess, conf.data_path + "/checkpoint/" + "model_%d.ckpt" % (epoch+1))
@@ -90,18 +114,27 @@ def train(model, wandb_api_key=None):
                     gen_img = sess.run(model.gen_img, feed_dict={model.image:pimg, model.cond:pcond})
                     gen_img = gen_img.reshape(gen_img.shape[1:])
                     gen_img = (gen_img + 1.) * 127.5
-                    image = np.concatenate((gen_img, cond), axis=1).astype(np.int)
-                    imsave(image, conf.output_path + "/%s" % name)
+                    image = np.concatenate((gen_img, cond), axis=1).astype(np.uint8)
+                    #imsave(image, conf.output_path + "/%s" % name)
 
-                    if idx < 10:
+                    if idx < (conf.n_test_save or 100):
                         wandb_image = wandb.Image(image, caption=f'{name}_epoch{epoch}')
                         images.append(wandb_image)
+                        writer = writers[idx]
+                        writer.write(image)
+                        images_for_table[idx].append(image)
                     else:
                         break
                         
-                wandb.log({'predictions': images}, step=counter)
-                print(f'logged images {images}')
-                    
+                wandb.log({f'predictions_epoch{epoch}': images})
+
+    for writer in writers:
+        writer.release()
+    wandb.log({'videos': [wandb.Video(name) for name in names]})
+    for i, name in enumerate(names):
+        table.add_data(name, *[wandb.Image(data) for data in images_for_table[i]]
+    test_evolution.add(table, 'training_evolution')
+    wandb.run.log_artifact(test_evolution)
                     
 
 if __name__ == "__main__":
