@@ -9,11 +9,11 @@ class Config:
     train_size = 424
     img_channel = 3
     conv_channel_base = 64
-    n_train = 100
+    n_train = 1000
     n_test_save = 20
 
     learning_rate = 0.0002
     beta1 = 0.5
-    max_epoch = 2
+    max_epoch = 10
     L1_lambda = 100
     save_per_epoch=1
