@@ -62,7 +62,7 @@ def train(model, wandb_api_key=None):
     config.gpu_options.allow_growth = True
     wandb.config = {key: value for key, value in conf.__dict__.items() if not key.startswith('_')}
 
-    frameSize = (conf.img_size, conf.img_size * 2)
+    frameSize = (conf.img_size * 3, conf.img_size)
 
     writers = []
 
@@ -77,7 +77,7 @@ def train(model, wandb_api_key=None):
 
     wandb.init(project='GalaxyGAN')
     test_evolution = wandb.Artifact(f'test_evolution_{wandb.run.id}', type='predictions')
-    columns = ['id'] + ['epoch{i}' for i in range(conf.max_epoch)]    
+    columns = ['id'] + [f'epoch{i}' for i in range(conf.max_epoch)]    
     table = wandb.Table(columns=columns)
 
     with tf.Session(config=config) as sess:
@@ -116,7 +116,7 @@ def train(model, wandb_api_key=None):
                     gen_img = sess.run(model.gen_img, feed_dict={model.image:pimg, model.cond:pcond})
                     gen_img = gen_img.reshape(gen_img.shape[1:])
                     gen_img = (gen_img + 1.) * 127.5
-                    image = np.concatenate((gen_img, cond), axis=1).astype(np.uint8)
+                    image = np.concatenate((gen_img, cond, img), axis=1).astype(np.uint8)
                     #imsave(image, conf.output_path + "/%s" % name)
 
                     if idx < (conf.n_test_save or 100):
