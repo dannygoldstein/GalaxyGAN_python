@@ -9,7 +9,7 @@ class Config:
     train_size = 424
     img_channel = 3
     conv_channel_base = 64
-    n_train = 1000
+    n_train = 3000
     n_test_save = 15
 
     learning_rate = 0.0002
