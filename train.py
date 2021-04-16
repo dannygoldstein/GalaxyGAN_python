@@ -68,7 +68,7 @@ def train(model, wandb_api_key=None):
         counter = 0
         for epoch in range(conf.max_epoch):
             train_data = data["train"]()
-            for img, cond, name in train_data[:10]:
+            for img, cond, name in train_data:
                 img, cond = prepocess_train(img, cond)
                 _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
                 _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
@@ -78,13 +78,14 @@ def train(model, wandb_api_key=None):
                     print("Epoch [%d], Iteration [%d]: time: %4.4f, d_loss: %.8f, g_loss: %.8f" \
                       % (epoch, counter % 4001, time.time() - start_time, m, M))
                     wandb.tensorflow.log(tf.summary.merge_all())
+                    break
                     
             if (epoch + 1) % conf.save_per_epoch == 0:
                 save_path = saver.save(sess, conf.data_path + "/checkpoint/" + "model_%d.ckpt" % (epoch+1))
                 print("Model saved in file: %s" % save_path)
                 test_data = data["test"]()
                 images = []
-                for idx, (img, cond, name) in enumerate(test_data)[:10]:
+                for idx, (img, cond, name) in enumerate(test_data):
                     pimg, pcond = prepocess_test(img, cond)
                     gen_img = sess.run(model.gen_img, feed_dict={model.image:pimg, model.cond:pcond})
                     gen_img = gen_img.reshape(gen_img.shape[1:])
@@ -92,11 +93,14 @@ def train(model, wandb_api_key=None):
                     image = np.concatenate((gen_img, cond), axis=1).astype(np.int)
                     imsave(image, conf.output_path + "/%s" % name)
 
-                    if idx < 35:
+                    if idx < 10:
                         wandb_image = wandb.Image(image, caption=f'{name}_epoch{epoch}')
                         images.append(wandb_image)
+                    else:
+                        break
+                        
                 wandb.log({'predictions': images}, step=counter)
-                print('logged images')
+                print(f'logged images {images}')
                     
                     
 
