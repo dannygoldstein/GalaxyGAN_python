@@ -115,7 +115,7 @@ def train(model, wandb_api_key=None):
                     gen_img = sess.run(model.gen_img, feed_dict={model.image:pimg, model.cond:pcond})
                     gen_img = gen_img.reshape(gen_img.shape[1:])
                     gen_img = (gen_img + 1.) * 127.5
-                    image = np.concatenate((gen_img, cond, img), axis=1).astype(np.uint8)
+                    image = np.concatenate((img, cond, gen_img), axis=1).astype(np.uint8)
                     #imsave(image, conf.output_path + "/%s" % name)
 
                     if idx < (conf.n_test_save or 100):
