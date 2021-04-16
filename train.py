@@ -101,31 +101,27 @@ def train(model, wandb_api_key=None):
                 #_, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
                 _, M = sess.run([g_opt, model.g_loss], feed_dict={model.image:img, model.cond:cond})
                 counter += 1
-                if counter % 10 ==0:
+                if counter % 100 ==0 or counter == 1:
                     print("Epoch [%d], Iteration [%d]: time: %4.4f, d_loss: %.8f, g_loss: %.8f" \
                       % (epoch, counter % 4001, time.time() - start_time, m, M))
                     wandb.log({'generator_loss': M, 'discriminator_loss': m})
                     
-                    
-            if (epoch + 1) % conf.save_per_epoch == 0:
-                save_path = saver.save(sess, conf.data_path + "/checkpoint/" + "model_%d.ckpt" % (epoch+1))
-                print("Model saved in file: %s" % save_path)
-                test_data = data["test"]()
-                images = []
-                for idx, (img, cond, name) in enumerate(test_data):
-                    pimg, pcond = prepocess_test(img, cond)
-                    gen_img = sess.run(model.gen_img, feed_dict={model.image:pimg, model.cond:pcond})
-                    gen_img = gen_img.reshape(gen_img.shape[1:])
-                    gen_img = (gen_img + 1.) * 127.5
-                    image = np.concatenate((img, cond, gen_img), axis=1).astype(np.uint8)
-                    #imsave(image, conf.output_path + "/%s" % name)
+                    test_data = data["test"]()
+                    images = []
+                    for idx, (img, cond, name) in enumerate(test_data):
+                        pimg, pcond = prepocess_test(img, cond)
+                        gen_img = sess.run(model.gen_img, feed_dict={model.image:pimg, model.cond:pcond})
+                        gen_img = gen_img.reshape(gen_img.shape[1:])
+                        gen_img = (gen_img + 1.) * 127.5
+                        image = np.concatenate((img, cond, gen_img), axis=1).astype(np.uint8)
+                        #imsave(image, conf.output_path + "/%s" % name)
 
-                    if idx < (conf.n_test_save or 100):
-                        wandb_image = wandb.Image(image, caption=f'{name}_epoch{epoch}')
-                        images.append(wandb_image)
-                        images_for_table[idx].append(image)
-                    else:
-                        break
+                        if idx < (conf.n_test_save or 100):
+                            wandb_image = wandb.Image(image, caption=f'{name}_epoch{epoch}_counter{counter}')
+                            images.append(wandb_image)
+                            images_for_table[idx].append(image)
+                        else:
+                            break
                         
                 wandb.log({f'predictions_epoch{epoch}': images})
 
