@@ -72,7 +72,7 @@ def train(model, wandb_api_key=None):
     for i, (img, cond, name) in zip(range(conf.n_test_save or 100), test_data):
         vidname = f'{name}.mp4'
         names.append(vidname)
-        out = cv2.VideoWriter(vidname, cv2.VideoWriter_fourcc(*'MP4V'), 3, frameSize)
+        out = cv2.VideoWriter(vidname, cv2.VideoWriter_fourcc(*'mp4v'), 3, frameSize)
         writers.append(out)
 
     wandb.init(project='GalaxyGAN')
