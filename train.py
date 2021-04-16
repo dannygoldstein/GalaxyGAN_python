@@ -74,7 +74,7 @@ def train(model, wandb_api_key=None):
                 counter += 1
                 if counter % 10 ==0:
                     print("Epoch [%d], Iteration [%d]: time: %4.4f, d_loss: %.8f, g_loss: %.8f" \
-                      % (epoch, counter, time.time() - start_time, m, M))
+                      % (epoch, counter % 4001, time.time() - start_time, m, M))
                     wandb.log({'generator_loss': M, 'discriminator_loss': m}, step=counter)
                     
             if (epoch + 1) % conf.save_per_epoch == 0:
