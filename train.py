@@ -78,7 +78,7 @@ def train(model, wandb_api_key=None):
 
     wandb.init(project='GalaxyGAN')
     test_evolution = wandb.Artifact(f'test_evolution_{wandb.run.id}', type='predictions')
-    columns = ['id'] + [f'epoch{i}' for i in range(conf.max_epoch)]    
+    columns = ['id'] + [f'epoch{i}' for i in range(11)]
     table = wandb.Table(columns=columns)
 
     with tf.Session(config=config) as sess:
@@ -101,7 +101,7 @@ def train(model, wandb_api_key=None):
                 #_, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
                 _, M = sess.run([g_opt, model.g_loss], feed_dict={model.image:img, model.cond:cond})
                 counter += 1
-                if counter % 100 ==0 or counter == 1:
+                if counter % 300 ==0 or counter == 1:
                     print("Epoch [%d], Iteration [%d]: time: %4.4f, d_loss: %.8f, g_loss: %.8f" \
                       % (epoch, counter % 4001, time.time() - start_time, m, M))
                     wandb.log({'generator_loss': M, 'discriminator_loss': m})
@@ -123,7 +123,7 @@ def train(model, wandb_api_key=None):
                         else:
                             break
                         
-                wandb.log({f'predictions_epoch{epoch}': images})
+                    wandb.log({f'predictions_epoch{epoch}_counter{counter}': images})
 
 
     for i, name in enumerate(names):
