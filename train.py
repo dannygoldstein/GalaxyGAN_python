@@ -75,7 +75,7 @@ def train(model, wandb_api_key=None):
         out = cv2.VideoWriter(vidname, cv2.VideoWriter_fourcc(*'MP4V'), 3, frameSize)
         writers.append(out)
 
-    wandb.init(project='GalaxyGAN', config=tf.FLAGS)
+    wandb.init(project='GalaxyGAN')
     test_evolution = wandb.Artifact(f'test_evolution_{wandb.run.id}', type='predictions')
     columns = ['id'] + ['epoch{i}' for i in range(conf.max_epoch)]    
     table = wandb.Table(columns=columns)
