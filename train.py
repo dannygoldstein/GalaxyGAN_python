@@ -132,7 +132,7 @@ def train(model, wandb_api_key=None):
         writer.release()
     wandb.log({'videos': [wandb.Video(name) for name in names]})
     for i, name in enumerate(names):
-        table.add_data(name, *[wandb.Image(data) for data in images_for_table[i]]
+        table.add_data(name, *[wandb.Image(data) for data in images_for_table[i]])
     test_evolution.add(table, 'training_evolution')
     wandb.run.log_artifact(test_evolution)
                     
