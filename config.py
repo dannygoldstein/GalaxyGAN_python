@@ -14,6 +14,6 @@ class Config:
 
     learning_rate = 0.0002
     beta1 = 0.5
-    max_epoch = 10
+    max_epoch = 20
     L1_lambda = 100
     save_per_epoch=1
