@@ -7,6 +7,7 @@ import tensorflow as tf
 import numpy as np
 import time
 import sys
+import wandb
 
 def prepocess_train(img, cond,):
     
@@ -37,8 +38,13 @@ def prepocess_test(img, cond):
     cond = cond/127.5 - 1.
     return img,cond
 
-def train(model):
+    
+def train(model, wandb_api_key=None):
+    
     data = load_data()
+
+    wandb.login(key=wandb_api_key)
+    wandb.init(project='GalaxyGAN')
 
     d_opt = tf.train.AdamOptimizer(learning_rate=conf.learning_rate).minimize(model.d_loss, var_list=model.d_vars)
     g_opt = tf.train.AdamOptimizer(learning_rate=conf.learning_rate).minimize(model.g_loss, var_list=model.g_vars)
@@ -59,7 +65,6 @@ def train(model):
         else:
             saver.restore(sess, conf.model_path_train)
         for epoch in range(conf.max_epoch):
-            counter = 0
             train_data = data["train"]()
             for img, cond, name in train_data:
                 img, cond = prepocess_train(img, cond)
@@ -67,20 +72,30 @@ def train(model):
                 _, m = sess.run([d_opt, model.d_loss], feed_dict={model.image:img, model.cond:cond})
                 _, M = sess.run([g_opt, model.g_loss], feed_dict={model.image:img, model.cond:cond})
                 counter += 1
-                if counter % 50 ==0:
+                if counter % 10 ==0:
                     print("Epoch [%d], Iteration [%d]: time: %4.4f, d_loss: %.8f, g_loss: %.8f" \
                       % (epoch, counter, time.time() - start_time, m, M))
+                    wandb.log({'generator_loss': M, 'discriminator_loss': m}, step=counter)
+                    
             if (epoch + 1) % conf.save_per_epoch == 0:
                 save_path = saver.save(sess, conf.data_path + "/checkpoint/" + "model_%d.ckpt" % (epoch+1))
                 print("Model saved in file: %s" % save_path)
                 test_data = data["test"]()
-                for img, cond, name in test_data:
+                images = []
+                for idx, (img, cond, name) in enumerate(test_data):
                     pimg, pcond = prepocess_test(img, cond)
                     gen_img = sess.run(model.gen_img, feed_dict={model.image:pimg, model.cond:pcond})
                     gen_img = gen_img.reshape(gen_img.shape[1:])
                     gen_img = (gen_img + 1.) * 127.5
                     image = np.concatenate((gen_img, cond), axis=1).astype(np.int)
                     imsave(image, conf.output_path + "/%s" % name)
+
+                    if idx < 35:
+                        wandb_image = wandb.Image(image, caption=f'{name}_epoch{epoch}')
+                        images.append(wandb_image)
+                wandb.log({'predictions': images}, step=counter)
+                    
+                    
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == 'gpu=':
