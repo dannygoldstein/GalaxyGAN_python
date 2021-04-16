@@ -60,7 +60,7 @@ def train(model, wandb_api_key=None):
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
-    wandb.config = conf.__dict__()
+    wandb.config = {key: value for key, value in conf.__dict__.items() if not key.startswith('_')}
 
     frameSize = (conf.img_size, conf.img_size * 2)
 
